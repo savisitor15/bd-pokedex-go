@@ -1,10 +1,10 @@
 package main
 
 import (
-	"strings"
-	"fmt"
 	"bufio"
+	"fmt"
 	"os"
+	"strings"
 )
 
 type cliCommand struct {
@@ -13,16 +13,22 @@ type cliCommand struct {
 	callback    func() error
 }
 
-
+func getCommands() map[string]cliCommand{
+return map[string]cliCommand{
+	"help" : {
+		name: "help",
+		description: "Displays a help message",
+		callback: commandHelp,
+	},
+	"exit" : {
+		name: "exit",
+		description: "Exits the pokedex",
+		callback: commandExit,
+	},
+}
+}
 
 func commandLoop() error {
-	commands := map[string]cliCommand{
-		"exit" : {
-			name: "exit",
-			description: "Exits the pokedex",
-			callback: commandExit,
-		},
-	}
 	scanner := bufio.NewScanner(os.Stdin)
 	for {
 		fmt.Print("Pokedex > ")
@@ -31,7 +37,7 @@ func commandLoop() error {
 		}
 		input := cleanInput(scanner.Text())
 		fmt.Println()
-		if cmd, ok := commands[input[0]]; !ok {
+		if cmd, ok := getCommands()[input[0]]; !ok {
 			fmt.Println("Unknown command!")
 			fmt.Println("Your command was:", input[0])
 			continue
@@ -56,7 +62,17 @@ func cleanInput(text string) []string {
 	return final
 }
 
+func commandHelp() error {
+	fmt.Println("Welcome to the Pokedex!")
+	fmt.Println("Usage:")
+	for _, elm := range getCommands() {
+		fmt.Printf("%s : %s\n", elm.name, elm.description)
+	}
+	return nil
+}
+
 func commandExit() error {
+	fmt.Println("Closing the Pokedex... Goodbye!")
 	os.Exit(0)
 	return nil
 }
