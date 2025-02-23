@@ -57,8 +57,12 @@ func commandLoop() error {
 			fmt.Println("Your command was:", input[0])
 			continue
 		}else{
-			progState.previousCommand = input[0]
-			cmd.callback()
+			err := cmd.callback()
+			if err != nil {
+				fmt.Println(err)
+			}else{
+				progState.previousCommand = input[0]
+			}
 		}
 	}
 }
@@ -98,8 +102,7 @@ func commandMap() error {
 	if strings.Contains(progState.previousCommand, "map"){
 		// second map or mapb child call, page forward!
 		if err := updateMap(1); err != nil{
-			fmt.Println(err)
-			return nil
+			return err
 		}
 	}
 	printMap()
@@ -117,8 +120,7 @@ func commandMapB() error {
 	if strings.Contains(progState.previousCommand, "map"){
 		// second map or mapb child call, page forward!
 		if err := updateMap(-1); err != nil{
-			fmt.Println(err)
-			return nil
+			return err
 		}
 	}
 	printMap()
