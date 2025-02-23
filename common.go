@@ -20,6 +20,21 @@ return map[string]cliCommand{
 		description: "Displays a help message",
 		callback: commandHelp,
 	},
+	"map" : {
+		name: "map",
+		description: "Opens map/Next Page",
+		callback: commandMap,
+	},
+	"mapb" : {
+		name: "mapb",
+		description: "Opens map/Previous Page",
+		callback: commandMapB,
+	},
+	"debug" : {
+		name: "debug",
+		description: "toggle debug mode",
+		callback: commandDebug,
+	},
 	"exit" : {
 		name: "exit",
 		description: "Exits the pokedex",
@@ -42,6 +57,7 @@ func commandLoop() error {
 			fmt.Println("Your command was:", input[0])
 			continue
 		}else{
+			progState.previousCommand = input[0]
 			cmd.callback()
 		}
 	}
@@ -68,6 +84,49 @@ func commandHelp() error {
 	for _, elm := range getCommands() {
 		fmt.Printf("%s : %s\n", elm.name, elm.description)
 	}
+	return nil
+}
+
+func commandMap() error {
+	pMap := getGlobalMap()
+	if len(pMap.Results) == 0{
+		if err := updateMap(0); err != nil{
+			return err
+		}
+		pMap = getGlobalMap()
+	}
+	if strings.Contains(progState.previousCommand, "map"){
+		// second map or mapb child call, page forward!
+		if err := updateMap(1); err != nil{
+			fmt.Println(err)
+			return nil
+		}
+	}
+	printMap()
+	return nil
+}
+
+func commandMapB() error {
+	pMap := getGlobalMap()
+	if len(pMap.Results) == 0{
+		if err := updateMap(0); err != nil{
+			return err
+		}
+		pMap = getGlobalMap()
+	}
+	if strings.Contains(progState.previousCommand, "map"){
+		// second map or mapb child call, page forward!
+		if err := updateMap(-1); err != nil{
+			fmt.Println(err)
+			return nil
+		}
+	}
+	printMap()
+	return nil
+}
+
+func commandDebug() error {
+	progState.fDebug = !progState.fDebug
 	return nil
 }
 
