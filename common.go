@@ -13,34 +13,34 @@ type cliCommand struct {
 	callback    func() error
 }
 
-func getCommands() map[string]cliCommand{
-return map[string]cliCommand{
-	"help" : {
-		name: "help",
-		description: "Displays a help message",
-		callback: commandHelp,
-	},
-	"map" : {
-		name: "map",
-		description: "Opens map/Next Page",
-		callback: commandMap,
-	},
-	"mapb" : {
-		name: "mapb",
-		description: "Opens map/Previous Page",
-		callback: commandMapB,
-	},
-	"debug" : {
-		name: "debug",
-		description: "toggle debug mode",
-		callback: commandDebug,
-	},
-	"exit" : {
-		name: "exit",
-		description: "Exits the pokedex",
-		callback: commandExit,
-	},
-}
+func getCommands() map[string]cliCommand {
+	return map[string]cliCommand{
+		"help": {
+			name:        "help",
+			description: "Displays a help message",
+			callback:    commandHelp,
+		},
+		"map": {
+			name:        "map",
+			description: "Opens map/Next Page",
+			callback:    commandMap,
+		},
+		"mapb": {
+			name:        "mapb",
+			description: "Opens map/Previous Page",
+			callback:    commandMapB,
+		},
+		"debug": {
+			name:        "debug",
+			description: "toggle debug mode",
+			callback:    commandDebug,
+		},
+		"exit": {
+			name:        "exit",
+			description: "Exits the pokedex",
+			callback:    commandExit,
+		},
+	}
 }
 
 func commandLoop() error {
@@ -56,11 +56,12 @@ func commandLoop() error {
 			fmt.Println("Unknown command!")
 			fmt.Println("Your command was:", input[0])
 			continue
-		}else{
+		} else {
 			err := cmd.callback()
 			if err != nil {
 				fmt.Println(err)
-			}else{
+				progState.previousCommand = ""
+			} else {
 				progState.previousCommand = input[0]
 			}
 		}
@@ -93,15 +94,15 @@ func commandHelp() error {
 
 func commandMap() error {
 	pMap := getGlobalMap()
-	if len(pMap.Results) == 0{
-		if err := updateMap(0); err != nil{
+	if len(pMap.Results) == 0 {
+		if err := updateMap(0); err != nil {
 			return err
 		}
 		pMap = getGlobalMap()
 	}
-	if strings.Contains(progState.previousCommand, "map"){
+	if strings.Contains(progState.previousCommand, "map") {
 		// second map or mapb child call, page forward!
-		if err := updateMap(1); err != nil{
+		if err := updateMap(1); err != nil {
 			return err
 		}
 	}
@@ -111,15 +112,15 @@ func commandMap() error {
 
 func commandMapB() error {
 	pMap := getGlobalMap()
-	if len(pMap.Results) == 0{
-		if err := updateMap(0); err != nil{
+	if len(pMap.Results) == 0 {
+		if err := updateMap(0); err != nil {
 			return err
 		}
 		pMap = getGlobalMap()
 	}
-	if strings.Contains(progState.previousCommand, "map"){
+	if strings.Contains(progState.previousCommand, "map") {
 		// second map or mapb child call, page forward!
-		if err := updateMap(-1); err != nil{
+		if err := updateMap(-1); err != nil {
 			return err
 		}
 	}

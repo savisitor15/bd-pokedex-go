@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 )
 
@@ -80,24 +81,30 @@ func getMap(url string) (PokeMap, error) {
 	if len(url) == 0 {
 		url = progState.baseUrl
 	}
+	var jsonPayload []byte
 	// try to pull from cache
-	if newMap, ok := progState.globalMapCache[url]; ok{
+	if byteBody, ok := progState.globalMapCache.Get(url); !ok{
+		if progState.fDebug{fmt.Println("getMap - Net call!")}
+		res, err := http.Get(url)
+		if err != nil {
+			return PokeMap{}, fmt.Errorf("Error getting url: %w", err)
+		}
+		defer res.Body.Close()
+		if val, err :=io.ReadAll(res.Body); err != nil {
+			return PokeMap{}, err
+		} else {
+			// Add to the cache
+			progState.globalMapCache.Add(url, val)
+			jsonPayload = val
+		}
+	}else{
+		jsonPayload = byteBody
 		if progState.fDebug{fmt.Println("getMap - cache hit!")}
-		return newMap, nil
 	}
-	res, err := http.Get(url)
-	if err != nil {
-		return PokeMap{}, fmt.Errorf("Error getting url: %w", err)
-	}
-	defer res.Body.Close()
 	var newMap PokeMap
-	decoder := json.NewDecoder(res.Body)
-	if err := decoder.Decode(&newMap); err != nil {
+	if err := json.Unmarshal(jsonPayload, &newMap); err != nil {
 		return PokeMap{}, fmt.Errorf("Error decoding the json: %w", err)
 	}
-	if progState.fDebug{fmt.Println("getMap - Net call!")}
-	// Add to the cache
-	progState.globalMapCache[url] = newMap
 	return newMap, nil
 }
 
