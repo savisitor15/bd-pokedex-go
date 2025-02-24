@@ -3,7 +3,7 @@ package main
 import (
 	"time"
 
-	"github.com/savisitor15/db-pokedex-go/internal"
+	pokecache "github.com/savisitor15/db-pokedex-go/internal"
 )
 
 type pokeState struct {

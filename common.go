@@ -10,7 +10,7 @@ import (
 type cliCommand struct {
 	name        string
 	description string
-	callback    func() error
+	callback    func([]string) error
 }
 
 func getCommands() map[string]cliCommand {
@@ -29,6 +29,11 @@ func getCommands() map[string]cliCommand {
 			name:        "mapb",
 			description: "Opens map/Previous Page",
 			callback:    commandMapB,
+		},
+		"explore": {
+			name:        "explore <city/location>",
+			description: "get the pokemon from a given location",
+			callback:    commandExplore,
 		},
 		"debug": {
 			name:        "debug",
@@ -57,7 +62,7 @@ func commandLoop() error {
 			fmt.Println("Your command was:", input[0])
 			continue
 		} else {
-			err := cmd.callback()
+			err := cmd.callback(input[1:])
 			if err != nil {
 				fmt.Println(err)
 				progState.previousCommand = ""
@@ -83,7 +88,7 @@ func cleanInput(text string) []string {
 	return final
 }
 
-func commandHelp() error {
+func commandHelp([]string) error {
 	fmt.Println("Welcome to the Pokedex!")
 	fmt.Println("Usage:")
 	for _, elm := range getCommands() {
@@ -92,7 +97,7 @@ func commandHelp() error {
 	return nil
 }
 
-func commandMap() error {
+func commandMap([]string) error {
 	pMap := getGlobalMap()
 	if len(pMap.Results) == 0 {
 		if err := updateMap(0); err != nil {
@@ -110,7 +115,7 @@ func commandMap() error {
 	return nil
 }
 
-func commandMapB() error {
+func commandMapB([]string) error {
 	pMap := getGlobalMap()
 	if len(pMap.Results) == 0 {
 		if err := updateMap(0); err != nil {
@@ -128,12 +133,36 @@ func commandMapB() error {
 	return nil
 }
 
-func commandDebug() error {
+func commandExplore(param []string) error {
+	loc := param[0]
+	pMap := getGlobalMap()
+	if len(pMap.Results) == 0 {
+		if err := updateMap(0); err != nil {
+			return err
+		}
+	}
+	if !isValidLocation(loc){
+		return fmt.Errorf("Unable to find %s", loc)
+	}
+	fullUrl := progState.baseUrl + loc
+	location, err := getMap[PokeMapLocation](fullUrl)
+	if err != nil {
+		return err
+	}
+	fmt.Println(fmt.Sprintf("Exploring %s ...", loc))
+	fmt.Println("Found pokemon:")
+	for _, pok := range location.PokemonEncounters{
+		fmt.Println(" - ", pok.Pokemon.Name)
+	}
+	return nil
+}
+
+func commandDebug([]string) error {
 	progState.fDebug = !progState.fDebug
 	return nil
 }
 
-func commandExit() error {
+func commandExit([]string) error {
 	fmt.Println("Closing the Pokedex... Goodbye!")
 	os.Exit(0)
 	return nil
