@@ -1,11 +1,28 @@
-package main
+package pokedex
 
 import (
 	"bufio"
 	"fmt"
 	"os"
 	"strings"
+	"time"
+
+	pokecache "github.com/savisitor15/db-pokedex-go/internal/cache"
 )
+
+type PokeState struct {
+	GlobalMap *PokeMap
+	GlobalMapCache pokecache.Cache
+	PokemonCaught map[string]PokemonSpecies
+	BaseUrl string
+	PreviousCommand string
+	Debug bool
+}
+// Program State
+var progState PokeState
+func InitializeState(){
+	progState =	PokeState{PokemonCaught: make(map[string]PokemonSpecies),BaseUrl : "https://pokeapi.co/api/v2/", GlobalMap: &PokeMap{}, GlobalMapCache: pokecache.NewCache(time.Duration(time.Second * 5))}
+}
 
 type cliCommand struct {
 	name        string
@@ -35,6 +52,11 @@ func getCommands() map[string]cliCommand {
 			description: "get the pokemon from a given location",
 			callback:    commandExplore,
 		},
+		"catch": {
+			name:        "catch <pokemon>",
+			description: "Attempt to catch a pokemon",
+			callback:    commandCatch,
+		},
 		"debug": {
 			name:        "debug",
 			description: "toggle debug mode",
@@ -48,7 +70,7 @@ func getCommands() map[string]cliCommand {
 	}
 }
 
-func commandLoop() error {
+func CommandLoop() error {
 	scanner := bufio.NewScanner(os.Stdin)
 	for {
 		fmt.Print("Pokedex > ")
@@ -65,9 +87,9 @@ func commandLoop() error {
 			err := cmd.callback(input[1:])
 			if err != nil {
 				fmt.Println(err)
-				progState.previousCommand = ""
+				progState.PreviousCommand = ""
 			} else {
-				progState.previousCommand = input[0]
+				progState.PreviousCommand = input[0]
 			}
 		}
 	}
@@ -105,7 +127,7 @@ func commandMap([]string) error {
 		}
 		pMap = getGlobalMap()
 	}
-	if strings.Contains(progState.previousCommand, "map") {
+	if strings.Contains(progState.PreviousCommand, "map") {
 		// second map or mapb child call, page forward!
 		if err := updateMap(1); err != nil {
 			return err
@@ -123,7 +145,7 @@ func commandMapB([]string) error {
 		}
 		pMap = getGlobalMap()
 	}
-	if strings.Contains(progState.previousCommand, "map") {
+	if strings.Contains(progState.PreviousCommand, "map") {
 		// second map or mapb child call, page forward!
 		if err := updateMap(-1); err != nil {
 			return err
@@ -131,6 +153,11 @@ func commandMapB([]string) error {
 	}
 	printMap()
 	return nil
+}
+
+func commandCatch(param []string) error {
+	pok := param[0]
+	return catching(pok)
 }
 
 func commandExplore(param []string) error {
@@ -141,24 +168,24 @@ func commandExplore(param []string) error {
 			return err
 		}
 	}
-	if !isValidLocation(loc){
+	if !isValidLocation(loc) {
 		return fmt.Errorf("Unable to find %s", loc)
 	}
-	fullUrl := progState.baseUrl + loc
+	fullUrl := getMapUrl(loc)
 	location, err := getMap[PokeMapLocation](fullUrl)
 	if err != nil {
 		return err
 	}
 	fmt.Println(fmt.Sprintf("Exploring %s ...", loc))
 	fmt.Println("Found pokemon:")
-	for _, pok := range location.PokemonEncounters{
+	for _, pok := range location.PokemonEncounters {
 		fmt.Println(" - ", pok.Pokemon.Name)
 	}
 	return nil
 }
 
 func commandDebug([]string) error {
-	progState.fDebug = !progState.fDebug
+	progState.Debug = !progState.Debug
 	return nil
 }
 
